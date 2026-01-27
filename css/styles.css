@@ -1,0 +1,170 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, sans-serif;
+}
+
+/* Auth Pages */
+.auth-page {
+  height: 100vh;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+}
+
+.auth-box {
+  width: 320px;
+  background: #020617;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.auth-box h1 {
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 1.5rem;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 1rem;
+  background: #020617;
+  border: 1px solid #1e293b;
+  color: white;
+  border-radius: 6px;
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 10px;
+  background: #2563eb;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.switch {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
+.switch a {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+/* Chat Page */
+.chat-page {
+  height: 100vh;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+.chat-app {
+  display: flex;
+  height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: #020617;
+  border-right: 1px solid #1e293b;
+  padding: 1rem;
+}
+
+.chat-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chat-item.active,
+.chat-item:hover {
+  background: #1e293b;
+}
+
+.avatar {
+  background: #2563eb;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Chat Main */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+}
+
+.messages {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.message {
+  max-width: 60%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+.message.sent {
+  background: #2563eb;
+  margin-left: auto;
+}
+
+.message.received {
+  background: #1e293b;
+}
+
+/* Message Input */
+.message-input {
+  display: flex;
+  padding: 1rem;
+  border-top: 1px solid #1e293b;
+}
+
+.message-input input {
+  flex: 1;
+  padding: 10px;
+  background: #020617;
+  border: 1px solid #1e293b;
+  color: white;
+  border-radius: 6px;
+}
+
+.message-input button {
+  margin-left: 10px;
+  padding: 10px 16px;
+  background: #2563eb;
+  border: none;
+  color: white;
+  border-radius: 6px;
+}

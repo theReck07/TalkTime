@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Secure Chat</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="chat-page">
+
+  <div class="chat-app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h2>Chats</h2>
+
+      <div class="chat-item active">
+        <span class="avatar">A</span>
+        <div>
+          <p class="name">Alice</p>
+          <p class="last-msg">Hey there 👋</p>
+        </div>
+      </div>
+
+      <div class="chat-item">
+        <span class="avatar">B</span>
+        <div>
+          <p class="name">Bob</p>
+          <p class="last-msg">Let’s talk security</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <h3>Alice</h3>
+        <span class="status">🔒 Encrypted</span>
+      </header>
+
+      <section class="messages">
+        <div class="message received">Hi!</div>
+        <div class="message sent">Hello 👋</div>
+        <div class="message received">Secure chat looks cool 😎</div>
+      </section>
+
+      <form class="message-input">
+        <input type="text" placeholder="Type a message..." />
+        <button type="submit">Send</button>
+      </form>
+    </main>
+
+  </div>
+
+</body>
+</html>
