@@ -233,37 +233,94 @@
    MESSAGE INPUT
    ========================= */
 
+/* =========================
+   MESSAGE INPUT (CHATGPT STYLE)
+   ========================= */
+
 .message-input {
   display: flex;
+  align-items: center;
   gap: 10px;
-  padding: 1rem;
-  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  margin: 12px;
+  background: #2f2f2f;
+  border-radius: 999px;
+  border: 1px solid #3f3f3f;
 }
 
+/* Plus button */
+.plus-btn {
+  font-size: 22px;
+  color: #bbb;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Input field */
 .message-input input {
   flex: 1;
-  padding: 12px;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  border-radius: 10px;
-  outline: none;
-}
-
-.message-input input:focus {
-  border-color: var(--primary);
-}
-
-.message-input button {
-  padding: 12px 18px;
-  background: var(--primary);
+  background: transparent;
   border: none;
-  color: white;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
 }
 
-.message-input button:hover {
-  background: var(--primary-hover);
+/* Mic button */
+.mic-btn {
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 18px;
 }
+
+/* =========================
+   EMOJI PICKER
+   ========================= */
+
+.emoji-wrapper {
+  position: relative;
+}
+
+.emoji-box {
+  position: absolute;
+  bottom: 55px;
+  left: 0;
+  width: 260px;
+  height: 200px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 10px;
+
+  display: none;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.emoji-box.show {
+  display: grid;
+}
+
+.emoji-box span {
+  font-size: 22px;
+  cursor: pointer;
+  text-align: center;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.emoji-box span:hover {
+  background: #333;
+}
+
+
+
+
+

@@ -16,7 +16,7 @@
       <div class="chat-item active">
         <span class="avatar">A</span>
         <div>
-          <p class="name">Alice</p>
+          <p class="name">Pankaj</p>
           <p class="last-msg">Hey there 👋</p>
         </div>
       </div>
@@ -24,7 +24,7 @@
       <div class="chat-item">
         <span class="avatar">B</span>
         <div>
-          <p class="name">Bob</p>
+          <p class="name">Piyush</p>
           <p class="last-msg">Let’s talk security</p>
         </div>
       </div>
@@ -33,7 +33,7 @@
     <!-- Chat Area -->
     <main class="chat-main">
       <header class="chat-header">
-        <h3>Alice</h3>
+        <h3>Pankaj</h3>
         <span class="status">🔒 Encrypted</span>
       </header>
 
@@ -43,13 +43,33 @@
         <div class="message received">Secure chat looks cool 😎</div>
       </section>
 
-      <form class="message-input">
-        <input type="text" placeholder="Type a message..." />
-        <button type="submit">Send</button>
-      </form>
-    </main>
+<form class="message-input">
 
+  <!-- Plus + Emoji Picker -->
+  <div class="emoji-wrapper">
+    <span class="plus-btn">＋</span>
+
+    <div class="emoji-box">
+      <span>😀</span><span>😂</span><span>😍</span><span>😎</span><span>😭</span>
+      <span>😡</span><span>👍</span><span>❤️</span><span>🔥</span>
+      <span>🎉</span><span>🙏</span><span>😇</span><span>😈</span><span>💀</span>
+    </div>
   </div>
+
+  <!-- Input -->
+  <input
+    type="text"
+    id="messageInput"
+    placeholder="Ask anything"
+  />
+
+  <!-- Optional mic icon -->
+  <button type="button" class="mic-btn">🎤</button>
+
+</form>
+
+<script src="js/chat.js"></script>
+
 
 </body>
 </html>

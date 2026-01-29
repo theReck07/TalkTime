@@ -2,26 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Secure Chat | Register</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <title>Register</title>
+  <link rel="stylesheet" href="css/auth.css" />
 </head>
-<body class="auth-page">
+<body>
 
-  <div class="auth-box">
-    <h1>Create Account</h1>
-    <p class="subtitle">End-to-end encrypted chat</p>
+  <div class="theme-toggle" onclick="toggleTheme()">⚫️</div>
+
+  <div class="auth-container">
+    <div class="title2">Sign up for TalkTime</div>
+    <div class="subtitle">Create your free account</div>
 
     <form>
       <input type="text" placeholder="Username" required />
       <input type="email" placeholder="Email" required />
       <input type="password" placeholder="Password" required />
-      <button type="submit">Register</button>
+      <button type="submit">Create Account</button>
     </form>
-
-    <p class="switch">
-      Already have an account? <a href="login.html">Login</a>
-    </p>
+  <div class="register">
+    <span>Already have an account?</span>
+    <a class="link" href="login.html">Sign in →</a>
+  </div> 
   </div>
 
+  <script src="js/theme.js"></script>
 </body>
 </html>
