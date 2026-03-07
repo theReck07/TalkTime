@@ -2,30 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TalkTime — Create Account</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/auth.css" />
 </head>
 <body>
 
-  <div class="theme-toggle" onclick="toggleTheme()">⚫️</div>
+  <!-- Ambient background blobs (register palette) -->
+  <div class="blob blob-reg-1"></div>
+  <div class="blob blob-reg-2"></div>
+  <div class="blob blob-reg-3"></div>
 
-  <div class="auth-container">
-    <div class="title2">Sign up for TalkTime</div>
-    <div class="subtitle">Create your free account</div>
+  <!-- Theme toggle -->
+  <div class="theme-toggle" onclick="toggleTheme()" title="Toggle theme"></div>
 
-    <form>
-      <input type="text" placeholder="Username" required />
-      <input type="email" placeholder="Email" required />
-      <input type="password" placeholder="Password" required />
-      <button type="submit">Create Account</button>
+  <!-- Auth card (slightly wider for extra fields) -->
+  <div class="auth-card auth-card--wide">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-icon">💬</div>
+      <span class="brand-name">TalkTime</span>
+    </div>
+
+    <h1>Create your account</h1>
+    <p class="subtitle">Start chatting for free — no credit card needed</p>
+
+    <!-- Register form -->
+    <form onsubmit="handleRegister(event)">
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          placeholder="e.g. cool_username"
+          autocomplete="username"
+          oninput="validateUsername(this)"
+          required
+        />
+        <div class="hint" id="username-hint">3–20 characters — letters, numbers, underscores</div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          oninput="validateEmail(this)"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="pw">Password</label>
+        <input
+          type="password"
+          id="pw"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          oninput="checkStrength(this)"
+          required
+        />
+        <span class="pw-toggle" onclick="togglePw('pw', this)" title="Show / hide password">👁️</span>
+        <!-- Strength bar (4 segments, updated by JS) -->
+        <div class="pw-strength" id="pw-strength">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pw2">Confirm Password</label>
+        <input
+          type="password"
+          id="pw2"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          oninput="checkMatch(this)"
+          required
+        />
+        <span class="pw-toggle" onclick="togglePw('pw2', this)" title="Show / hide password">👁️</span>
+      </div>
+
+      <!-- Terms -->
+      <label class="terms">
+        <input type="checkbox" id="terms-check" />
+        I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+      </label>
+
+      <button class="btn-primary" type="submit" id="register-btn">Create Account</button>
     </form>
 
-  <div class="register">
-    <span>Already have an account?</span>
-    <a class="link" href="login.html">Sign in →</a>
-  </div> 
-  </div>
+    <!-- Divider -->
+    <div class="divider">or sign up with</div>
+
+    <!-- Google OAuth -->
+    <button class="btn-social" type="button">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.2 33.9 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.2-2.7-.5-4z"/>
+        <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.1 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.7 0-14.4 4.4-17.7 11.7z"/>
+        <path fill="#FBBC05" d="M24 45c5.5 0 10.5-1.9 14.3-5l-6.6-5.4C29.7 36.2 27 37 24 37c-5.7 0-10.5-3.1-12.2-7.6l-7 5.4C8 40.5 15.5 45 24 45z"/>
+        <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.2-2 4.1-3.9 5.5l6.6 5.4C41.8 36.1 45 30.5 45 24c0-1.4-.2-2.7-.5-4z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <!-- Footer -->
+    <div class="auth-footer">
+      Already have an account? <a href="login.html">Sign in →</a>
+    </div>
+
+  </div><!-- /.auth-card -->
 
   <script src="js/theme.js"></script>
+  <script src="js/register.js"></script>
 </body>
 </html>
