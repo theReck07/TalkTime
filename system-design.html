@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TalkTime — System Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#070d1a;--bg2:#0d1628;--bg3:#111e35;--bg4:#162040;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#dde4f0;--muted:#5a6a8a;--dim:#2a3a55;
+  --accent:#5be3c1;--accent2:#7eb8ff;--accent3:#f472b6;--accent4:#fb923c;--accent5:#a78bfa;
+  --sent:#2563eb;
+  --grad:linear-gradient(135deg,#5be3c1,#7eb8ff);
+  --grad2:linear-gradient(135deg,#f472b6,#fb923c);
+  --grad3:linear-gradient(135deg,#a78bfa,#7eb8ff);
+  --shadow:0 8px 32px rgba(0,0,0,0.5);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--text);
+  line-height:1.6;overflow-x:hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:99px;}
+
+/* ── Header ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:80px 40px 60px;text-align:center;
+  border-bottom:1px solid var(--border);
+}
+.hero-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 60%,rgba(91,227,193,.08) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 30%,rgba(126,184,255,.08) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 40% at 50% 80%,rgba(244,114,182,.05) 0%,transparent 60%);
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(91,227,193,.1);border:1px solid rgba(91,227,193,.2);
+  border-radius:99px;padding:5px 14px;
+  font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:24px;
+}
+.hero h1{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(32px,6vw,62px);
+  letter-spacing:-1.5px;line-height:1.05;margin-bottom:16px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-size:16px;color:var(--muted);max-width:560px;margin:0 auto 36px;}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.tag{
+  padding:5px 13px;border-radius:99px;font-size:12px;font-weight:600;
+  border:1px solid;letter-spacing:.03em;
+}
+.tag-green{color:#5be3c1;border-color:rgba(91,227,193,.3);background:rgba(91,227,193,.07);}
+.tag-blue {color:#7eb8ff;border-color:rgba(126,184,255,.3);background:rgba(126,184,255,.07);}
+.tag-pink {color:#f472b6;border-color:rgba(244,114,182,.3);background:rgba(244,114,182,.07);}
+.tag-orange{color:#fb923c;border-color:rgba(251,146,60,.3);background:rgba(251,146,60,.07);}
+.tag-purple{color:#a78bfa;border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.07);}
+
+/* ── Nav ── */
+.sticky-nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(7,13,26,.92);backdrop-filter:blur(20px) saturate(1.5);
+  border-bottom:1px solid var(--border);
+  display:flex;gap:0;overflow-x:auto;padding:0 32px;
+}
+.sticky-nav::-webkit-scrollbar{height:2px;}
+.nav-link{
+  padding:14px 18px;font-size:13px;font-weight:600;
+  color:var(--muted);text-decoration:none;white-space:nowrap;
+  border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+}
+.nav-link:hover,.nav-link.active{color:var(--accent);border-color:var(--accent);}
+
+/* ── Layout ── */
+.page{max-width:1200px;margin:0 auto;padding:0 24px 80px;}
+
+/* ── Section ── */
+.section{margin-top:72px;}
+.section-header{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+.section-icon{
+  width:44px;height:44px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.section-title{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.5px;
+}
+.section-desc{color:var(--muted);font-size:14px;margin-top:2px;}
+
+/* ── Cards ── */
+.card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:24px;transition:border-color .2s,box-shadow .2s;
+}
+.card:hover{border-color:var(--border2);box-shadow:var(--shadow);}
+.grid{display:grid;gap:16px;}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+
+.card-title{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:15px;
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.card-body{font-size:13.5px;color:var(--muted);line-height:1.7;}
+.card-body strong{color:var(--text);}
+
+/* ── Pill ── */
+.pill{
+  display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:700;
+  letter-spacing:.04em;margin:2px;
+}
+
+/* ── Architecture diagram ── */
+.arch-diagram{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:32px;overflow-x:auto;position:relative;
+}
+.arch-row{display:flex;gap:16px;justify-content:center;align-items:stretch;flex-wrap:wrap;margin-bottom:16px;}
+.arch-box{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:12px;
+  padding:12px 16px;text-align:center;min-width:120px;flex-shrink:0;
+  font-size:12.5px;font-weight:600;position:relative;cursor:default;
+  transition:transform .2s,box-shadow .2s;
+}
+.arch-box:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.arch-box .emoji{font-size:20px;display:block;margin-bottom:4px;}
+.arch-box .label{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;}
+
+.arch-arrow{
+  display:flex;align-items:center;justify-content:center;
+  color:var(--dim);font-size:22px;padding:0 4px;align-self:center;
+}
+.arch-divider{
+  text-align:center;color:var(--dim);font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin:8px 0;display:flex;align-items:center;gap:12px;
+}
+.arch-divider::before,.arch-divider::after{content:'';flex:1;height:1px;background:var(--dim);}
+
+.arch-layer{
+  border:1px dashed var(--dim);border-radius:12px;padding:16px;margin-bottom:12px;
+}
+.arch-layer-label{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:6px;
+}
+
+/* Color coded boxes */
+.box-green {border-color:rgba(91,227,193,.4);background:rgba(91,227,193,.05);}
+.box-blue  {border-color:rgba(126,184,255,.4);background:rgba(126,184,255,.05);}
+.box-pink  {border-color:rgba(244,114,182,.4);background:rgba(244,114,182,.05);}
+.box-orange{border-color:rgba(251,146,60,.4); background:rgba(251,146,60,.05);}
+.box-purple{border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.05);}
+.box-yellow{border-color:rgba(250,204,21,.4); background:rgba(250,204,21,.05);}
+
+.text-green{color:#5be3c1;}.text-blue{color:#7eb8ff;}
+.text-pink{color:#f472b6;}.text-orange{color:#fb923c;}
+.text-purple{color:#a78bfa;}.text-yellow{color:#facc15;}
+
+/* ── Flow diagram ── */
+.flow{display:flex;flex-direction:column;gap:0;}
+.flow-step{
+  display:flex;gap:16px;align-items:flex-start;padding:16px 0;
+  border-left:2px solid var(--dim);margin-left:20px;padding-left:24px;position:relative;
+}
+.flow-step::before{
+  content:attr(data-num);
+  position:absolute;left:-13px;top:18px;
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;font-family:'Syne',sans-serif;
+}
+.flow-step.green::before{background:rgba(91,227,193,.2);color:#5be3c1;border:1px solid rgba(91,227,193,.4);}
+.flow-step.blue::before {background:rgba(126,184,255,.2);color:#7eb8ff;border:1px solid rgba(126,184,255,.4);}
+.flow-step.pink::before {background:rgba(244,114,182,.2);color:#f472b6;border:1px solid rgba(244,114,182,.4);}
+.flow-step.orange::before{background:rgba(251,146,60,.2);color:#fb923c;border:1px solid rgba(251,146,60,.4);}
+.flow-step.purple::before{background:rgba(167,139,250,.2);color:#a78bfa;border:1px solid rgba(167,139,250,.4);}
+
+.flow-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.flow-body{font-size:13px;color:var(--muted);line-height:1.6;}
+
+/* ── Code block ── */
+.code-block{
+  background:#050b16;border:1px solid var(--border);border-radius:10px;
+  padding:20px;font-family:'DM Mono',monospace;font-size:12.5px;
+  overflow-x:auto;line-height:1.7;margin-top:12px;
+}
+.code-block .kw{color:#7eb8ff;}.code-block .str{color:#5be3c1;}
+.code-block .cm{color:#3d5070;font-style:italic;}
+.code-block .fn{color:#f472b6;}.code-block .num{color:#fb923c;}
+.code-block .key{color:#a78bfa;}
+
+/* ── Table ── */
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{
+  text-align:left;padding:10px 14px;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+.data-table td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.03);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,.02);}
+
+/* ── Metric cards ── */
+.metric{text-align:center;padding:20px;}
+.metric-val{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:32px;letter-spacing:-1px;
+  background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.metric-label{font-size:12px;color:var(--muted);margin-top:4px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+
+/* ── Security item ── */
+.sec-item{display:flex;gap:14px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--border-light,rgba(255,255,255,.04));}
+.sec-item:last-child{border-bottom:none;}
+.sec-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sec-title{font-weight:700;font-size:13.5px;margin-bottom:3px;}
+.sec-body{font-size:12.5px;color:var(--muted);line-height:1.6;}
+
+/* ── Tech stack chips ── */
+.tech-grid{display:flex;flex-wrap:wrap;gap:10px;}
+.tech-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:8px 13px;font-size:13px;font-weight:500;
+  transition:border-color .2s,transform .15s;cursor:default;
+}
+.tech-chip:hover{border-color:var(--border2);transform:translateY(-1px);}
+.tech-chip .chip-icon{font-size:16px;}
+.tech-chip .chip-role{font-size:10.5px;color:var(--muted);display:block;}
+
+/* ── Callout ── */
+.callout{
+  display:flex;gap:14px;align-items:flex-start;
+  border-radius:12px;padding:16px 18px;margin:16px 0;
+  font-size:13.5px;border:1px solid;
+}
+.callout-info{background:rgba(126,184,255,.06);border-color:rgba(126,184,255,.2);color:#7eb8ff;}
+.callout-warn{background:rgba(251,146,60,.06);border-color:rgba(251,146,60,.2);color:#fb923c;}
+.callout-tip {background:rgba(91,227,193,.06);border-color:rgba(91,227,193,.2);color:#5be3c1;}
+.callout-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.callout-text{color:var(--text);}
+.callout-text strong{color:inherit;}
+
+/* ── Toggle accordion ── */
+.accordion{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:12px;}
+.accordion-item{border-bottom:1px solid var(--border);}
+.accordion-item:last-child{border-bottom:none;}
+.accordion-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:15px 20px;background:transparent;border:none;color:var(--text);
+  cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  text-align:left;transition:background .15s;gap:12px;
+}
+.accordion-trigger:hover{background:rgba(255,255,255,.03);}
+.accordion-arrow{color:var(--muted);transition:transform .25s;flex-shrink:0;font-size:12px;}
+.accordion-trigger.open .accordion-arrow{transform:rotate(180deg);}
+.accordion-content{
+  max-height:0;overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),padding .2s;
+  padding:0 20px;
+}
+.accordion-content.open{max-height:800px;padding:0 20px 20px;}
+
+/* ── Footer ── */
+.footer{
+  border-top:1px solid var(--border);margin-top:80px;padding:32px 24px;
+  text-align:center;color:var(--muted);font-size:13px;
+}
+.footer strong{color:var(--accent);}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .hero{padding:50px 20px 40px;}
+  .page{padding:0 14px 60px;}
+  .sticky-nav{padding:0 14px;}
+  .arch-diagram{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HERO ══════════════ -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-badge">📐 System Design Document</div>
+  <h1>TalkTime Architecture</h1>
+  <p class="hero-sub">Complete system design for a real-time encrypted chat application — frontend, backend, infrastructure, and everything in between.</p>
+  <div class="hero-tags">
+    <span class="tag tag-green">WebSockets</span>
+    <span class="tag tag-blue">REST API</span>
+    <span class="tag tag-pink">End-to-End Encryption</span>
+    <span class="tag tag-orange">Redis Pub/Sub</span>
+    <span class="tag tag-purple">Microservices</span>
+    <span class="tag tag-green">PostgreSQL</span>
+    <span class="tag tag-blue">S3 Storage</span>
+    <span class="tag tag-pink">JWT Auth</span>
+    <span class="tag tag-orange">React Native</span>
+  </div>
+</div>
+
+<!-- ══════════════ NAV ══════════════ -->
+<nav class="sticky-nav" id="stickyNav">
+  <a class="nav-link active" href="#overview">Overview</a>
+  <a class="nav-link" href="#architecture">Architecture</a>
+  <a class="nav-link" href="#frontend">Frontend</a>
+  <a class="nav-link" href="#backend">Backend</a>
+  <a class="nav-link" href="#realtime">Real-time</a>
+  <a class="nav-link" href="#database">Database</a>
+  <a class="nav-link" href="#security">Security</a>
+  <a class="nav-link" href="#infrastructure">Infrastructure</a>
+  <a class="nav-link" href="#api">API Design</a>
+  <a class="nav-link" href="#scale">Scalability</a>
+  <a class="nav-link" href="#techstack">Tech Stack</a>
+</nav>
+
+<div class="page">
+
+<!-- ══════════════ OVERVIEW ══════════════ -->
+<section class="section" id="overview">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(91,227,193,.12);border:1px solid rgba(91,227,193,.2);">🗺️</div>
+    <div>
+      <div class="section-title">System Overview</div>
+      <div class="section-desc">Key numbers and functional scope of TalkTime</div>
+    </div>
+  </div>
+
+  <div class="grid grid-4">
+    <div class="card metric"><div class="metric-val">&lt;100ms</div><div class="metric-label">Message Delivery</div></div>
+    <div class="card metric"><div class="metric-val">1M+</div><div class="metric-label">Concurrent Users</div></div>
+    <div class="card metric"><div class="metric-val">99.99%</div><div class="metric-label">Uptime SLA</div></div>
+    <div class="card metric"><div class="metric-val">E2EE</div><div class="metric-label">Encryption</div></div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title">🎯 Core Features</div>
+      <div class="card-body">
+        <strong>1-to-1 & Group Messaging</strong> — real-time text, emoji, file sharing<br/>
+        <strong>Auth</strong> — JWT + Google OAuth2 login, registration, password reset<br/>
+        <strong>Read receipts</strong> — sent ✓, delivered ✓✓, read ✓✓ (blue)<br/>
+        <strong>Online presence</strong> — live online/offline/last-seen status<br/>
+        <strong>Push notifications</strong> — web push + mobile (FCM/APNs)<br/>
+        <strong>End-to-end encryption</strong> — Signal Protocol (X3DH + Double Ratchet)<br/>
+        <strong>Media uploads</strong> — images, audio, video, documents via S3<br/>
+        <strong>Message search</strong> — full-text search via Elasticsearch
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Non-Functional Requirements</div>
+      <div class="card-body">
+        <strong>Availability</strong> — 99.99% (multi-region active-active)<br/>
+        <strong>Latency</strong> — P99 &lt; 100ms message delivery within a region<br/>
+        <strong>Durability</strong> — messages stored with 3× replication + S3 backup<br/>
+        <strong>Consistency</strong> — eventual consistency for message ordering; strong for auth<br/>
+        <strong>Scalability</strong> — horizontal pod scaling, sharded databases<br/>
+        <strong>Security</strong> — E2EE, TLS 1.3, OWASP compliance, rate limiting<br/>
+        <strong>Compliance</strong> — GDPR, data residency, right to erasure<br/>
+        <strong>Observability</strong> — distributed tracing, metrics, structured logs
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ARCHITECTURE ══════════════ -->
+<section class="section" id="architecture">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(126,184,255,.12);border:1px solid rgba(126,184,255,.2);">🏗️</div>
+    <div>
+      <div class="section-title">High-Level Architecture</div>
+      <div class="section-desc">Full system diagram — clients to databases</div>
+    </div>
+  </div>
+
+  <div class="arch-diagram">
+
+    <!-- Clients -->
+    <div class="arch-layer" style="border-color:rgba(91,227,193,.25);">
+      <div class="arch-layer-label text-green">📱 Client Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-green"><span class="emoji">🌐</span>Web App<span class="label">React / Vite</span></div>
+        <div class="arch-box box-green"><span class="emoji">📱</span>iOS App<span class="label">React Native</span></div>
+        <div class="arch-box box-green"><span class="emoji">🤖</span>Android App<span class="label">React Native</span></div>
+        <div class="arch-box box-green"><span class="emoji">💻</span>Desktop<span class="label">Electron</span></div>
+      </div>
+    </div>
+
+    <div class="arch-divider">↓ HTTPS / WSS ↓</div>
+
+    <!-- Edge -->
+    <div class="arch-layer" style="border-color:rgba(244,114,182,.25);">
+      <div class="arch-layer-label text-pink">🛡️ Edge / Gateway Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-pink"><span class="emoji">☁️</span>CDN<span class="label">CloudFront / Cloudflare</span></div>
+        <div class="arch-box box-pink"><span class="emoji">⚖️</span>Load Balancer<span class="label">AWS ALB / Nginx</span></div>
+        <div class="arch-box box-pink"><span class="emoji">🚪</span>API Gateway<span class="label">Kong / Custom</span></div>
+        <div class="arch-box box-pink"><span class="emoji">🚦</span>Rate Limiter<span class="label">Redis Token Bucket</span></div>
+      </div>
+    </div>
+
+    <div class="arch-divider">↓ Internal Network ↓</div>
+
+    <!-- Services -->
+    <div class="arch-layer" style="border-color:rgba(126,184,255,.25);">
+      <div class="arch-layer-label text-blue">⚙️ Microservices Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-blue"><span class="emoji">🔐</span>Auth Service<span class="label">JWT / OAuth2</span></div>
+        <div class="arch-box box-blue"><span class="emoji">💬</span>Chat Service<span class="label">WS + REST</span></div>
+        <div class="arch-box box-blue"><span class="emoji">👤</span>User Service<span class="label">Profiles / Presence</span></div>
+        <div class="arch-box box-blue"><span class="emoji">📁</span>Media Service<span class="label">Upload / CDN</span></div>
+        <div class="arch-box box-blue"><span class="emoji">🔔</span>Notification Svc<span class="label">FCM / APNs / Web Push</span></div>
+        <div class="arch-box box-blue"><span class="emoji">🔍</span>Search Service<span class="label">Elasticsearch</span></div>
+      </div>
+    </div>
+
+    <div class="arch-divider">↓ Message Bus ↓</div>
+
+    <!-- Messaging -->
+    <div class="arch-layer" style="border-color:rgba(251,146,60,.25);">
+      <div class="arch-layer-label text-orange">📨 Messaging / Real-time Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-orange"><span class="emoji">🔴</span>Redis Pub/Sub<span class="label">Presence & Routing</span></div>
+        <div class="arch-box box-orange"><span class="emoji">📦</span>Kafka<span class="label">Event Streaming</span></div>
+        <div class="arch-box box-orange"><span class="emoji">🔌</span>WebSocket Cluster<span class="label">Socket.io / ws</span></div>
+        <div class="arch-box box-orange"><span class="emoji">📬</span>Message Queue<span class="label">SQS / BullMQ</span></div>
+      </div>
+    </div>
+
+    <div class="arch-divider">↓ Persistence ↓</div>
+
+    <!-- Storage -->
+    <div class="arch-layer" style="border-color:rgba(167,139,250,.25);">
+      <div class="arch-layer-label text-purple">🗄️ Storage Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-purple"><span class="emoji">🐘</span>PostgreSQL<span class="label">Users / Auth / Groups</span></div>
+        <div class="arch-box box-purple"><span class="emoji">🍃</span>MongoDB<span class="label">Messages / History</span></div>
+        <div class="arch-box box-purple"><span class="emoji">🔴</span>Redis Cluster<span class="label">Cache / Sessions</span></div>
+        <div class="arch-box box-purple"><span class="emoji">🪣</span>S3<span class="label">Media / Attachments</span></div>
+        <div class="arch-box box-purple"><span class="emoji">🔎</span>Elasticsearch<span class="label">Full-text Search</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout callout-info" style="margin-top:16px;">
+    <span class="callout-icon">ℹ️</span>
+    <span class="callout-text">All inter-service communication uses <strong>gRPC</strong> for internal calls and <strong>REST/WebSocket</strong> for client-facing APIs. Services are containerised with Docker and orchestrated by Kubernetes.</span>
+  </div>
+</section>
+
+<!-- ══════════════ FRONTEND ══════════════ -->
+<section class="section" id="frontend">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(91,227,193,.12);border:1px solid rgba(91,227,193,.2);">🎨</div>
+    <div>
+      <div class="section-title">Frontend Architecture</div>
+      <div class="section-desc">Client-side structure, state management, and component design</div>
+    </div>
+  </div>
+
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-title">📁 Project Structure</div>
+      <div class="code-block">
+<span class="cm">src/</span>
+├── <span class="str">pages/</span>
+│   ├── Login.jsx
+│   ├── Register.jsx
+│   ├── ForgotPassword.jsx
+│   └── Chat.jsx
+├── <span class="str">components/</span>
+│   ├── Sidebar/
+│   ├── MessageList/
+│   ├── MessageInput/
+│   ├── EmojiPicker/
+│   └── MediaPreview/
+├── <span class="str">hooks/</span>
+│   ├── useSocket.js
+│   ├── useAuth.js
+│   └── useMessages.js
+├── <span class="str">store/</span>  <span class="cm">(Zustand)</span>
+│   ├── authStore.js
+│   ├── chatStore.js
+│   └── uiStore.js
+└── <span class="str">services/</span>
+    ├── api.js
+    ├── socket.js
+    └── crypto.js
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 State Management</div>
+      <div class="card-body">
+        <strong>Zustand</strong> — lightweight global store for auth, active chat, message lists<br/><br/>
+        <strong>React Query</strong> — server state: conversation history, user profiles, search results with caching + background refetch<br/><br/>
+        <strong>Local state</strong> — UI-only state (modals, input values, typing)<br/><br/>
+        <strong>IndexedDB</strong> — offline message cache via Dexie.js; stores last 1000 messages per conversation locally
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Performance</div>
+      <div class="card-body">
+        <strong>Virtual list</strong> — react-window for rendering 10k+ messages without lag<br/><br/>
+        <strong>Code splitting</strong> — lazy-load routes; chat bundle separate from auth<br/><br/>
+        <strong>Web Workers</strong> — encryption/decryption runs off the main thread<br/><br/>
+        <strong>Service Worker</strong> — PWA support; offline access to cached conversations<br/><br/>
+        <strong>Optimistic UI</strong> — messages appear instantly, sync confirmed in background
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title">🔌 WebSocket Client Logic</div>
+      <div class="code-block">
+<span class="cm">// hooks/useSocket.js</span>
+<span class="kw">const</span> <span class="fn">useSocket</span> = () => {
+  <span class="kw">const</span> socket = <span class="fn">useRef</span>(<span class="kw">null</span>);
+
+  <span class="fn">useEffect</span>(() => {
+    socket.current = <span class="fn">io</span>(<span class="str">WS_URL</span>, {
+      auth: { token: <span class="fn">getToken</span>() },
+      transports: [<span class="str">'websocket'</span>],
+      reconnectionAttempts: <span class="num">5</span>,
+    });
+
+    socket.current.<span class="fn">on</span>(<span class="str">'message:new'</span>, <span class="fn">handleNewMessage</span>);
+    socket.current.<span class="fn">on</span>(<span class="str">'status:update'</span>, <span class="fn">handlePresence</span>);
+    socket.current.<span class="fn">on</span>(<span class="str">'receipt:read'</span>,  <span class="fn">handleReceipt</span>);
+
+    <span class="kw">return</span> () => socket.current.<span class="fn">disconnect</span>();
+  }, []);
+
+  <span class="kw">return</span> socket;
+};
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔐 Client-Side Encryption</div>
+      <div class="code-block">
+<span class="cm">// services/crypto.js (Web Crypto API)</span>
+<span class="kw">async function</span> <span class="fn">encryptMessage</span>(text, recipientKey) {
+  <span class="kw">const</span> iv = crypto.<span class="fn">getRandomValues</span>(
+    <span class="kw">new</span> Uint8Array(<span class="num">12</span>)
+  );
+  <span class="kw">const</span> encoded = <span class="kw">new</span> <span class="fn">TextEncoder</span>().<span class="fn">encode</span>(text);
+  <span class="kw">const</span> ciphertext = <span class="kw">await</span> crypto.subtle.<span class="fn">encrypt</span>(
+    { name: <span class="str">'AES-GCM'</span>, iv },
+    recipientKey, encoded
+  );
+  <span class="kw">return</span> { ciphertext, iv };
+}
+<span class="cm">// Keys derived via X3DH + Double Ratchet</span>
+<span class="cm">// (Signal Protocol — libsodium.js)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ BACKEND ══════════════ -->
+<section class="section" id="backend">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(126,184,255,.12);border:1px solid rgba(126,184,255,.2);">⚙️</div>
+    <div>
+      <div class="section-title">Backend Services</div>
+      <div class="section-desc">Microservice responsibilities, APIs, and internal communication</div>
+    </div>
+  </div>
+
+  <div class="accordion">
+
+    <div class="accordion-item">
+      <button class="accordion-trigger open" onclick="toggleAccordion(this)">
+        🔐 Auth Service — Authentication & Authorization
+        <span class="accordion-arrow">▼</span>
+      </button>
+      <div class="accordion-content open">
+        <div class="grid grid-2" style="margin-top:8px;">
+          <div>
+            <strong style="font-size:13px;">Responsibilities</strong>
+            <div class="flow" style="margin-top:10px;">
+              <div class="flow-step green" data-num="1"><div><div class="flow-title">User Registration</div><div class="flow-body">Validate input → hash password (bcrypt, 12 rounds) → generate email verification token → store in PostgreSQL → send verification email via SES</div></div></div>
+              <div class="flow-step blue" data-num="2"><div><div class="flow-title">Login</div><div class="flow-body">Verify credentials → issue short-lived Access Token (JWT, 15min) + long-lived Refresh Token (httpOnly cookie, 30 days) stored in Redis</div></div></div>
+              <div class="flow-step pink" data-num="3"><div><div class="flow-title">Token Refresh</div><div class="flow-body">Validate refresh token from Redis → rotate (issue new pair, revoke old) → sliding window expiry</div></div></div>
+              <div class="flow-step orange" data-num="4"><div><div class="flow-title">OAuth2 (Google)</div><div class="flow-body">Receive code from client → exchange with Google → upsert user record → issue JWT pair same as password login</div></div></div>
+              <div class="flow-step purple" data-num="5"><div><div class="flow-title">Password Reset</div><div class="flow-body">Generate signed token (HMAC-SHA256, 15min TTL) → store hash in Redis → email link → verify → update password → invalidate all sessions</div></div></div>
+            </div>
+          </div>
+          <div>
+            <strong style="font-size:13px;">JWT Payload Structure</strong>
+            <div class="code-block">
+{
+  <span class="key">"sub"</span>:  <span class="str">"user_uuid"</span>,
+  <span class="key">"iat"</span>:  <span class="num">1710000000</span>,
+  <span class="key">"exp"</span>:  <span class="num">1710000900</span>, <span class="cm">// +15min</span>
+  <span class="key">"role"</span>: <span class="str">"user"</span>,
+  <span class="key">"jti"</span>:  <span class="str">"unique-token-id"</span> <span class="cm">// for revocation</span>
+}
+<span class="cm">// Signed with RS256 (asymmetric)</span>
+<span class="cm">// Public key exposed at /.well-known/jwks.json</span>
+            </div>
+            <div class="callout callout-warn" style="margin-top:12px;">
+              <span class="callout-icon">⚠️</span>
+              <span class="callout-text">Refresh tokens are stored in Redis with the user's <strong>device fingerprint</strong>. Logging out on one device doesn't expire other sessions.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="toggleAccordion(this)">
+        💬 Chat Service — Message Handling & WebSocket
+        <span class="accordion-arrow">▼</span>
+      </button>
+      <div class="accordion-content">
+        <div class="grid grid-2" style="margin-top:8px;">
+          <div>
+            <strong style="font-size:13px;">Message Send Flow</strong>
+            <div class="flow" style="margin-top:10px;">
+              <div class="flow-step green" data-num="1"><div><div class="flow-title">Client sends via WebSocket</div><div class="flow-body">Event: <code style="color:var(--accent);font-family:'DM Mono',monospace;">message:send</code> — encrypted payload, temp client ID, conversation ID</div></div></div>
+              <div class="flow-step blue" data-num="2"><div><div class="flow-title">Server validates & persists</div><div class="flow-body">Auth middleware verifies JWT → write to MongoDB with status "sent" → generate server message ID</div></div></div>
+              <div class="flow-step pink" data-num="3"><div><div class="flow-title">ACK to sender</div><div class="flow-body">Emit <code style="color:var(--accent);font-family:'DM Mono',monospace;">message:ack</code> back with server ID → client swaps temp ID, marks ✓ sent</div></div></div>
+              <div class="flow-step orange" data-num="4"><div><div class="flow-title">Publish to Redis</div><div class="flow-body">Publish to channel <code style="color:var(--accent);font-family:'DM Mono',monospace;">chat:{conversationId}</code> — all WS nodes subscribed to that channel receive it</div></div></div>
+              <div class="flow-step purple" data-num="5"><div><div class="flow-title">Push to recipient</div><div class="flow-body">If online: WebSocket delivery → receipt ✓✓. If offline: Kafka event → Notification Service → FCM/APNs push</div></div></div>
+            </div>
+          </div>
+          <div>
+            <strong style="font-size:13px;">WebSocket Events</strong>
+            <table class="data-table" style="margin-top:10px;">
+              <thead><tr><th>Event</th><th>Direction</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">message:send</span></td><td>C→S</td><td>Send a new message</td></tr>
+                <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">message:new</span></td><td>S→C</td><td>Receive a message</td></tr>
+                <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">message:ack</span></td><td>S→C</td><td>Server confirmed receipt</td></tr>
+                <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">receipt:delivered</span></td><td>S→C</td><td>Message delivered to device</td></tr>
+                <tr><td><span class="pill" style="background:rgba(244,114,182,.1);color:#f472b6;">receipt:read</span></td><td>C↔S</td><td>Message read by recipient</td></tr>
+                <tr><td><span class="pill" style="background:rgba(251,146,60,.1);color:#fb923c;">typing:start</span></td><td>C→S→C</td><td>User started typing</td></tr>
+                <tr><td><span class="pill" style="background:rgba(251,146,60,.1);color:#fb923c;">typing:stop</span></td><td>C→S→C</td><td>User stopped typing</td></tr>
+                <tr><td><span class="pill" style="background:rgba(167,139,250,.1);color:#a78bfa;">presence:update</span></td><td>S→C</td><td>Contact online/offline</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="toggleAccordion(this)">
+        👤 User Service — Profiles, Contacts & Presence
+        <span class="accordion-arrow">▼</span>
+      </button>
+      <div class="accordion-content">
+        <div class="grid grid-3" style="margin-top:8px;">
+          <div class="card" style="margin:0;">
+            <div class="card-title">Profile Management</div>
+            <div class="card-body">CRUD for display name, avatar (uploaded to S3 with pre-signed URL), bio, and privacy settings. Avatar thumbnails generated via Lambda@Edge on upload.</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="card-title">Contact Discovery</div>
+            <div class="card-body">Search by username or phone (hashed phone lookup preserving privacy). Contact requests with accept/reject. Block list stored in PostgreSQL with cascading privacy rules.</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="card-title">Presence System</div>
+            <div class="card-body">On WS connect → SET <code style="color:var(--accent);font-family:'DM Mono',monospace;">presence:{userId}</code> = "online" in Redis with 60s TTL. Heartbeat every 30s resets TTL. On disconnect → publish "offline" event to all contacts.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="toggleAccordion(this)">
+        📁 Media Service — File Upload & Delivery
+        <span class="accordion-arrow">▼</span>
+      </button>
+      <div class="accordion-content">
+        <div class="grid grid-2" style="margin-top:8px;">
+          <div>
+            <strong style="font-size:13px;">Upload Flow</strong>
+            <div class="flow" style="margin-top:10px;">
+              <div class="flow-step green" data-num="1"><div><div class="flow-title">Client requests upload URL</div><div class="flow-body">POST /media/upload-url → server validates file type/size → generates S3 pre-signed PUT URL (5min expiry)</div></div></div>
+              <div class="flow-step blue" data-num="2"><div><div class="flow-title">Direct S3 upload</div><div class="flow-body">Client uploads directly to S3 — bypasses backend, saving bandwidth. Encrypted client-side before upload for E2EE media.</div></div></div>
+              <div class="flow-step pink" data-num="3"><div><div class="flow-title">Post-upload processing</div><div class="flow-body">S3 event → Lambda: generate thumbnails (images/video), transcode video to HLS, extract metadata, run virus scan</div></div></div>
+              <div class="flow-step orange" data-num="4"><div><div class="flow-title">CDN delivery</div><div class="flow-body">Media served via CloudFront with signed URLs (time-limited). Original S3 bucket is private; access only via CDN.</div></div></div>
+            </div>
+          </div>
+          <div>
+            <strong style="font-size:13px;">Supported Media</strong><br/><br/>
+            <span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">Images</span> JPG, PNG, WebP, GIF — max 10MB<br/>
+            <span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">Video</span> MP4, MOV — max 100MB — HLS streaming<br/>
+            <span class="pill" style="background:rgba(244,114,182,.1);color:#f472b6;">Audio</span> MP3, OGG, M4A — max 25MB<br/>
+            <span class="pill" style="background:rgba(251,146,60,.1);color:#fb923c;">Docs</span> PDF, DOCX, XLSX — max 50MB<br/><br/>
+            <div class="callout callout-tip" style="margin-top:8px;">
+              <span class="callout-icon">💡</span>
+              <span class="callout-text">Images are compressed with <strong>Sharp</strong> on Lambda. WebP conversion saves ~30% bandwidth.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <button class="accordion-trigger" onclick="toggleAccordion(this)">
+        🔔 Notification Service — Push & Email
+        <span class="accordion-arrow">▼</span>
+      </button>
+      <div class="accordion-content">
+        <div class="grid grid-3" style="margin-top:8px;">
+          <div class="card" style="margin:0;">
+            <div class="card-title">🔥 Firebase (FCM)</div>
+            <div class="card-body">Android + Web push notifications. Batched via Kafka consumer. Handles delivery failures with exponential backoff. Device tokens stored per-user in PostgreSQL.</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="card-title">🍎 Apple (APNs)</div>
+            <div class="card-body">iOS push notifications. Certificate-based auth. Background pushes for message sync. Silent notifications for read receipts. Notification grouping by conversation.</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div class="card-title">📧 Email (SES)</div>
+            <div class="card-body">Transactional emails: verification, password reset, login alerts. Templated with AWS SES. Bounce/complaint handling via SNS. Daily digest for missed messages (opt-in).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ REAL-TIME ══════════════ -->
+<section class="section" id="realtime">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.2);">⚡</div>
+    <div>
+      <div class="section-title">Real-Time Architecture</div>
+      <div class="section-desc">WebSocket clustering, Redis Pub/Sub, and Kafka event streaming</div>
+    </div>
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-layer-label text-orange" style="margin-bottom:16px;">Multi-node WebSocket Routing</div>
+
+    <div class="arch-row">
+      <div class="arch-box box-green"><span class="emoji">👤</span>User A<span class="label">WS Node 1</span></div>
+      <div class="arch-box box-green"><span class="emoji">👤</span>User B<span class="label">WS Node 2</span></div>
+      <div class="arch-box box-green"><span class="emoji">👤</span>User C<span class="label">WS Node 1</span></div>
+    </div>
+
+    <div style="text-align:center;color:var(--muted);margin:8px 0;font-size:13px;">Users connected to <em>different</em> WebSocket server nodes</div>
+
+    <div class="arch-row">
+      <div class="arch-box box-orange" style="min-width:200px;"><span class="emoji">🔴</span>Redis Pub/Sub<span class="label">Channel: chat:{convId}</span></div>
+    </div>
+
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin:4px 0;">All WS nodes subscribe to Redis. Message published once, fan-out handled by Redis.</div>
+
+    <div class="arch-row">
+      <div class="arch-box box-blue"><span class="emoji">📡</span>WS Node 1<span class="label">serves A + C</span></div>
+      <div class="arch-box box-blue"><span class="emoji">📡</span>WS Node 2<span class="label">serves B</span></div>
+      <div class="arch-box box-blue"><span class="emoji">📡</span>WS Node 3<span class="label">standby</span></div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="arch-layer-label text-orange">Kafka Event Topics</div>
+      <div class="arch-row">
+        <div class="arch-box box-orange"><span class="emoji">📨</span>chat.messages<span class="label">All messages</span></div>
+        <div class="arch-box box-orange"><span class="emoji">🔔</span>notifications<span class="label">Push triggers</span></div>
+        <div class="arch-box box-orange"><span class="emoji">📖</span>message.read<span class="label">Read receipts</span></div>
+        <div class="arch-box box-orange"><span class="emoji">👁️</span>user.presence<span class="label">Online status</span></div>
+        <div class="arch-box box-orange"><span class="emoji">📁</span>media.uploaded<span class="label">Media events</span></div>
+        <div class="arch-box box-orange"><span class="emoji">🔍</span>search.index<span class="label">Index updates</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info" style="margin-top:16px;">
+    <span class="callout-icon">ℹ️</span>
+    <span class="callout-text"><strong>Sticky sessions</strong> are NOT used. Any WS node can serve any user. Cross-node delivery is handled by Redis Pub/Sub. This enables true horizontal scaling — just add more WS pods.</span>
+  </div>
+</section>
+
+<!-- ══════════════ DATABASE ══════════════ -->
+<section class="section" id="database">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);">🗄️</div>
+    <div>
+      <div class="section-title">Database Design</div>
+      <div class="section-desc">Schema, sharding strategy, and data access patterns</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title text-green">🐘 PostgreSQL — Relational Data</div>
+      <div class="code-block">
+<span class="cm">-- Users table</span>
+<span class="kw">CREATE TABLE</span> users (
+  id          UUID <span class="kw">PRIMARY KEY</span> <span class="fn">DEFAULT gen_random_uuid</span>(),
+  username    VARCHAR(<span class="num">30</span>) <span class="kw">UNIQUE NOT NULL</span>,
+  email       VARCHAR(<span class="num">255</span>) <span class="kw">UNIQUE NOT NULL</span>,
+  password_hash TEXT,
+  avatar_url  TEXT,
+  created_at  TIMESTAMPTZ <span class="kw">DEFAULT</span> <span class="fn">now</span>(),
+  last_seen   TIMESTAMPTZ
+);
+
+<span class="cm">-- Conversations</span>
+<span class="kw">CREATE TABLE</span> conversations (
+  id       UUID <span class="kw">PRIMARY KEY</span>,
+  type     VARCHAR(<span class="num">10</span>), <span class="cm">-- 'direct' | 'group'</span>
+  name     TEXT,        <span class="cm">-- null for direct</span>
+  created_by UUID <span class="kw">REFERENCES</span> users(id)
+);
+
+<span class="cm">-- Members</span>
+<span class="kw">CREATE TABLE</span> conversation_members (
+  conversation_id UUID <span class="kw">REFERENCES</span> conversations(id),
+  user_id         UUID <span class="kw">REFERENCES</span> users(id),
+  role            VARCHAR(<span class="num">10</span>) <span class="kw">DEFAULT</span> <span class="str">'member'</span>,
+  joined_at       TIMESTAMPTZ <span class="kw">DEFAULT</span> <span class="fn">now</span>(),
+  <span class="kw">PRIMARY KEY</span> (conversation_id, user_id)
+);
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title text-blue">🍃 MongoDB — Message Storage</div>
+      <div class="code-block">
+<span class="cm">// messages collection</span>
+{
+  _id:            ObjectId,
+  conversationId: <span class="str">"uuid"</span>,
+  senderId:       <span class="str">"uuid"</span>,
+  type:           <span class="str">"text|image|video|file"</span>,
+
+  <span class="cm">// E2EE: ciphertext stored, not plaintext</span>
+  content: {
+    ciphertext: <span class="str">"base64..."</span>,
+    iv:         <span class="str">"base64..."</span>,
+    algorithm:  <span class="str">"AES-256-GCM"</span>
+  },
+
+  mediaUrl:   <span class="str">"https://cdn...."</span>, <span class="cm">// if media</span>
+  status:     <span class="str">"sent|delivered|read"</span>,
+  replyTo:    ObjectId,           <span class="cm">// quoted msg</span>
+  reactions:  [{ emoji, userId }],
+  editedAt:   ISODate,
+  deletedAt:  ISODate,            <span class="cm">// soft delete</span>
+  createdAt:  ISODate,
+
+  <span class="cm">// Indexed fields</span>
+  <span class="cm">// idx: { conversationId: 1, createdAt: -1 }</span>
+  <span class="cm">// idx: { conversationId: 1, status: 1 }</span>
+}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-3" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title text-orange">🔴 Redis Data Structures</div>
+      <div class="code-block" style="font-size:11.5px;">
+<span class="cm"># Session store</span>
+SET session:{jti} {userId} EX 2592000
+
+<span class="cm"># Presence</span>
+SET presence:{userId} "online" EX 60
+ZADD online_users {timestamp} {userId}
+
+<span class="cm"># Unread counts</span>
+HINCRBY unread:{userId} {convId} 1
+
+<span class="cm"># Rate limiting</span>
+INCR ratelimit:{userId}:{minute}
+EXPIRE ratelimit:{userId}:{minute} 60
+
+<span class="cm"># Message dedup</span>
+SET dedup:{clientMsgId} {serverId} EX 300
+
+<span class="cm"># Typing indicator</span>
+SET typing:{convId}:{userId} 1 EX 5
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Sharding Strategy</div>
+      <div class="card-body">
+        <strong>MongoDB</strong> — shard by <code style="color:var(--accent);font-family:'DM Mono',monospace;">conversationId</code>. All messages in a conversation land on the same shard → efficient range queries.<br/><br/>
+        <strong>PostgreSQL</strong> — partition users table by <code style="color:var(--accent);font-family:'DM Mono',monospace;">id % N</code> (hash partitioning). Read replicas per region for low-latency reads.<br/><br/>
+        <strong>Redis Cluster</strong> — 6 nodes (3 primary, 3 replica). Hash slots by key prefix. Cluster-aware clients.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 Data Retention</div>
+      <div class="card-body">
+        <strong>Active messages</strong> — MongoDB primary (hot tier)<br/>
+        <strong>6 months+</strong> — tiered to MongoDB Atlas archive<br/>
+        <strong>2 years+</strong> — compressed to S3 Glacier<br/><br/>
+        <strong>Deletion</strong> — soft delete (deletedAt field) for 30 days, then hard delete by cron.<br/><br/>
+        <strong>GDPR erasure</strong> — wipes user PII across all collections within 30 days of request.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SECURITY ══════════════ -->
+<section class="section" id="security">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.2);">🔒</div>
+    <div>
+      <div class="section-title">Security Architecture</div>
+      <div class="section-desc">Encryption, authentication, and attack prevention</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">🔐 End-to-End Encryption</div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(91,227,193,.1);">🗝️</div>
+        <div><div class="sec-title">X3DH Key Agreement</div><div class="sec-body">Extended Triple Diffie-Hellman for initial session establishment. Identity keys, signed pre-keys, and one-time pre-keys published to the server. Server never sees private keys.</div></div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(126,184,255,.1);">🔄</div>
+        <div><div class="sec-title">Double Ratchet Algorithm</div><div class="sec-body">Forward secrecy + break-in recovery. New encryption key per message. Compromising one key doesn't expose past or future messages.</div></div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(244,114,182,.1);">🛡️</div>
+        <div><div class="sec-title">Transport Encryption</div><div class="sec-body">TLS 1.3 for all HTTP/WS connections. Certificate pinning in mobile apps. HSTS with 1-year max-age + preload.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Attack Prevention</div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(251,146,60,.1);">🚦</div>
+        <div><div class="sec-title">Rate Limiting</div><div class="sec-body">Token bucket per user, per IP. Login: 5 attempts/min, lockout 15min. Message send: 60/min. File upload: 10/min. Implemented in Redis at API gateway.</div></div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(167,139,250,.1);">🧹</div>
+        <div><div class="sec-title">Input Sanitisation</div><div class="sec-body">All user input validated with Zod schemas. HTML stripped server-side. SQL injection impossible (parameterised queries, ORM). XSS prevented via DOMPurify on client.</div></div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(91,227,193,.1);">🦠</div>
+        <div><div class="sec-title">Media Scanning</div><div class="sec-body">All uploads scanned with ClamAV on Lambda before CDN distribution. MIME type verification (magic bytes, not extension). Max file size enforced at gateway.</div></div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon" style="background:rgba(126,184,255,.1);">🔑</div>
+        <div><div class="sec-title">Secrets Management</div><div class="sec-body">All secrets in AWS Secrets Manager. Zero hardcoded credentials. Automatic rotation for DB passwords every 30 days. Env vars injected at runtime via ECS task definitions.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ INFRASTRUCTURE ══════════════ -->
+<section class="section" id="infrastructure">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.2);">☁️</div>
+    <div>
+      <div class="section-title">Infrastructure & DevOps</div>
+      <div class="section-desc">Cloud architecture, CI/CD, monitoring, and deployment</div>
+    </div>
+  </div>
+
+  <div class="arch-diagram">
+    <div class="arch-layer-label text-orange" style="margin-bottom:16px;">Multi-Region Deployment (AWS)</div>
+    <div class="arch-row">
+      <div class="arch-box box-orange" style="min-width:160px;"><span class="emoji">🌍</span>us-east-1<span class="label">Primary Region</span></div>
+      <div class="arch-arrow">↔️</div>
+      <div class="arch-box box-orange" style="min-width:160px;"><span class="emoji">🌏</span>ap-south-1<span class="label">Asia Region</span></div>
+      <div class="arch-arrow">↔️</div>
+      <div class="arch-box box-orange" style="min-width:160px;"><span class="emoji">🌎</span>eu-west-1<span class="label">EU Region</span></div>
+    </div>
+    <div style="text-align:center;color:var(--muted);font-size:12px;margin:8px 0;">Route 53 Latency-based routing → nearest region. Cross-region DB replication via DMS.</div>
+
+    <div class="arch-layer" style="border-color:rgba(126,184,255,.2);margin-top:16px;">
+      <div class="arch-layer-label text-blue">Kubernetes Cluster (EKS) — per region</div>
+      <div class="arch-row">
+        <div class="arch-box box-blue"><span class="emoji">🔐</span>auth-svc<span class="label">3 pods</span></div>
+        <div class="arch-box box-blue"><span class="emoji">💬</span>chat-svc<span class="label">5–50 pods (HPA)</span></div>
+        <div class="arch-box box-blue"><span class="emoji">👤</span>user-svc<span class="label">3 pods</span></div>
+        <div class="arch-box box-blue"><span class="emoji">📁</span>media-svc<span class="label">2 pods</span></div>
+        <div class="arch-box box-blue"><span class="emoji">🔔</span>notif-svc<span class="label">3 pods</span></div>
+        <div class="arch-box box-blue"><span class="emoji">🔍</span>search-svc<span class="label">2 pods</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-3" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title">🚀 CI/CD Pipeline</div>
+      <div class="flow">
+        <div class="flow-step green" data-num="1"><div><div class="flow-title">Push to GitHub</div><div class="flow-body">Feature branch PR triggers GitHub Actions</div></div></div>
+        <div class="flow-step blue" data-num="2"><div><div class="flow-title">Tests & Lint</div><div class="flow-body">Jest unit tests, Playwright E2E, ESLint, TypeScript check</div></div></div>
+        <div class="flow-step pink" data-num="3"><div><div class="flow-title">Build & Scan</div><div class="flow-body">Docker build → Trivy security scan → push to ECR</div></div></div>
+        <div class="flow-step orange" data-num="4"><div><div class="flow-title">Deploy Staging</div><div class="flow-body">ArgoCD rolling deploy to staging EKS cluster</div></div></div>
+        <div class="flow-step purple" data-num="5"><div><div class="flow-title">Deploy Production</div><div class="flow-body">Manual approval gate → blue/green deployment to prod</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Observability Stack</div>
+      <div class="card-body">
+        <strong>Metrics</strong> — Prometheus + Grafana dashboards. Custom metrics: WS connections, message throughput, queue depth, p99 latency.<br/><br/>
+        <strong>Logs</strong> — Structured JSON logs → Fluent Bit → OpenSearch. Correlation IDs trace requests across services.<br/><br/>
+        <strong>Tracing</strong> — OpenTelemetry SDK in every service → Jaeger for distributed trace visualisation.<br/><br/>
+        <strong>Alerting</strong> — PagerDuty integration. Alerts on: error rate &gt;1%, p99 &gt;500ms, pod restarts, queue lag &gt;10k.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Auto-scaling Rules</div>
+      <div class="card-body">
+        <strong>Horizontal Pod Autoscaler (HPA)</strong><br/>
+        Chat service: scale up when CPU &gt;60% or WS connections &gt;5k/pod<br/>
+        Target: 2,000 WS connections per pod<br/><br/>
+        <strong>Cluster Autoscaler</strong><br/>
+        EC2 node groups: min 3, max 30 nodes<br/>
+        Spot instances for stateless pods (60% cost saving)<br/><br/>
+        <strong>Database</strong><br/>
+        MongoDB Atlas auto-scale storage. Redis: manual shard addition with 20% headroom trigger.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ API DESIGN ══════════════ -->
+<section class="section" id="api">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(91,227,193,.12);border:1px solid rgba(91,227,193,.2);">📡</div>
+    <div>
+      <div class="section-title">API Design</div>
+      <div class="section-desc">REST endpoints and WebSocket protocol</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">🔐 Auth Endpoints</div>
+      <table class="data-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/register</code></td><td>Create account</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/login</code></td><td>Sign in, get tokens</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/refresh</code></td><td>Rotate access token</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/logout</code></td><td>Revoke refresh token</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/forgot-password</code></td><td>Send reset email</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/reset-password</code></td><td>Set new password</td></tr>
+          <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">GET</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/verify-email</code></td><td>Verify email token</td></tr>
+          <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">GET</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/auth/google</code></td><td>OAuth2 redirect</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">💬 Chat Endpoints</div>
+      <table class="data-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">GET</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/conversations</code></td><td>List all conversations</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/conversations</code></td><td>Create conversation</td></tr>
+          <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">GET</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/conversations/:id/messages</code></td><td>Paginated history</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/conversations/:id/messages</code></td><td>Send via REST fallback</td></tr>
+          <tr><td><span class="pill" style="background:rgba(244,114,182,.1);color:#f472b6;">PATCH</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/messages/:id</code></td><td>Edit message</td></tr>
+          <tr><td><span class="pill" style="background:rgba(251,146,60,.1);color:#fb923c;">DELETE</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/messages/:id</code></td><td>Delete message</td></tr>
+          <tr><td><span class="pill" style="background:rgba(91,227,193,.1);color:#5be3c1;">POST</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/media/upload-url</code></td><td>Pre-signed S3 URL</td></tr>
+          <tr><td><span class="pill" style="background:rgba(126,184,255,.1);color:#7eb8ff;">GET</span></td><td><code style="font-family:'DM Mono',monospace;font-size:12px;">/search?q=&amp;conv=</code></td><td>Full-text search</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="card-title">📦 Standard API Response Format</div>
+    <div class="code-block">
+<span class="cm">// Success response</span>
+{
+  <span class="key">"success"</span>: <span class="kw">true</span>,
+  <span class="key">"data"</span>: { <span class="cm">/* payload */</span> },
+  <span class="key">"meta"</span>: { <span class="key">"page"</span>: <span class="num">1</span>, <span class="key">"limit"</span>: <span class="num">50</span>, <span class="key">"total"</span>: <span class="num">234</span>, <span class="key">"cursor"</span>: <span class="str">"eyJfaWQi..."</span> }
+}
+
+<span class="cm">// Error response</span>
+{
+  <span class="key">"success"</span>: <span class="kw">false</span>,
+  <span class="key">"error"</span>: {
+    <span class="key">"code"</span>:    <span class="str">"INVALID_CREDENTIALS"</span>,
+    <span class="key">"message"</span>: <span class="str">"Email or password is incorrect"</span>,
+    <span class="key">"field"</span>:   <span class="str">"email"</span>  <span class="cm">// optional, for field-level validation errors</span>
+  },
+  <span class="key">"requestId"</span>: <span class="str">"uuid"</span>  <span class="cm">// for support/debugging</span>
+}
+<span class="cm">// Pagination uses cursor-based (not offset) for real-time data consistency</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SCALABILITY ══════════════ -->
+<section class="section" id="scale">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.2);">📈</div>
+    <div>
+      <div class="section-title">Scalability & Performance</div>
+      <div class="section-desc">Bottlenecks, caching strategy, and growth planning</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title">⚡ Caching Strategy</div>
+      <table class="data-table">
+        <thead><tr><th>Data</th><th>Cache</th><th>TTL</th></tr></thead>
+        <tbody>
+          <tr><td>User profile</td><td>Redis</td><td>5 min</td></tr>
+          <tr><td>Conversation list</td><td>Redis</td><td>1 min</td></tr>
+          <tr><td>Unread counts</td><td>Redis (HINCRBY)</td><td>Persistent</td></tr>
+          <tr><td>Presence status</td><td>Redis</td><td>60s (heartbeat)</td></tr>
+          <tr><td>Search results</td><td>Redis</td><td>30s</td></tr>
+          <tr><td>Static assets</td><td>CloudFront CDN</td><td>1 year</td></tr>
+          <tr><td>Media files</td><td>CloudFront CDN</td><td>7 days</td></tr>
+          <tr><td>Auth tokens</td><td>Redis (sessions)</td><td>30 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">🧩 Bottleneck Analysis</div>
+      <div class="card-body">
+        <strong>WebSocket connections</strong> — ~50k persistent connections per node (Node.js event loop). Scale via Kubernetes HPA. Redis Pub/Sub decouples nodes.<br/><br/>
+        <strong>Message fan-out (group chats)</strong> — For groups &gt;1000 members, async fan-out via Kafka. Online members get WS delivery; others get push notifications in batches.<br/><br/>
+        <strong>Media bandwidth</strong> — Handled entirely by S3 + CloudFront. Backend never proxies media bytes.<br/><br/>
+        <strong>DB write throughput</strong> — MongoDB Atlas M40+, writes to primary, reads from secondaries. Bulk inserts for batch operations.
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-tip" style="margin-top:16px;">
+    <span class="callout-icon">💡</span>
+    <span class="callout-text"><strong>Cost optimisation:</strong> Spot instances for stateless pods save ~60%. Reserved instances for databases. S3 Intelligent-Tiering automatically moves old media to cheaper storage. Estimated cost at 100k DAU: ~$800/month AWS.</span>
+  </div>
+</section>
+
+<!-- ══════════════ TECH STACK ══════════════ -->
+<section class="section" id="techstack">
+  <div class="section-header">
+    <div class="section-icon" style="background:rgba(126,184,255,.12);border:1px solid rgba(126,184,255,.2);">🛠️</div>
+    <div>
+      <div class="section-title">Full Tech Stack</div>
+      <div class="section-desc">Every technology used, and why</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-title text-green">🎨 Frontend</div>
+      <div class="tech-grid">
+        <div class="tech-chip"><span class="chip-icon">⚛️</span><div><strong>React 18</strong><span class="chip-role">UI framework</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">⚡</span><div><strong>Vite</strong><span class="chip-role">Build tool</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🐻</span><div><strong>Zustand</strong><span class="chip-role">State management</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔄</span><div><strong>React Query</strong><span class="chip-role">Server state</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔌</span><div><strong>Socket.io-client</strong><span class="chip-role">WebSocket</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">📱</span><div><strong>React Native</strong><span class="chip-role">Mobile apps</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔐</span><div><strong>libsodium.js</strong><span class="chip-role">Encryption</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">💾</span><div><strong>Dexie.js</strong><span class="chip-role">IndexedDB ORM</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title text-blue">⚙️ Backend</div>
+      <div class="tech-grid">
+        <div class="tech-chip"><span class="chip-icon">🟢</span><div><strong>Node.js</strong><span class="chip-role">Runtime</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🚀</span><div><strong>Fastify</strong><span class="chip-role">REST API</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔌</span><div><strong>Socket.io</strong><span class="chip-role">WebSocket server</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">📘</span><div><strong>TypeScript</strong><span class="chip-role">Type safety</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🛡️</span><div><strong>Zod</strong><span class="chip-role">Validation</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔗</span><div><strong>Prisma</strong><span class="chip-role">PostgreSQL ORM</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🍃</span><div><strong>Mongoose</strong><span class="chip-role">MongoDB ODM</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">📡</span><div><strong>gRPC</strong><span class="chip-role">Inter-service RPC</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title text-purple">🗄️ Data & Messaging</div>
+      <div class="tech-grid">
+        <div class="tech-chip"><span class="chip-icon">🐘</span><div><strong>PostgreSQL 16</strong><span class="chip-role">Relational DB</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🍃</span><div><strong>MongoDB Atlas</strong><span class="chip-role">Message store</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔴</span><div><strong>Redis 7</strong><span class="chip-role">Cache + Pub/Sub</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">📦</span><div><strong>Apache Kafka</strong><span class="chip-role">Event streaming</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔍</span><div><strong>Elasticsearch</strong><span class="chip-role">Full-text search</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🪣</span><div><strong>AWS S3</strong><span class="chip-role">Media storage</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title text-orange">☁️ Infrastructure & DevOps</div>
+      <div class="tech-grid">
+        <div class="tech-chip"><span class="chip-icon">☸️</span><div><strong>Kubernetes (EKS)</strong><span class="chip-role">Orchestration</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🐳</span><div><strong>Docker</strong><span class="chip-role">Containers</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🏗️</span><div><strong>Terraform</strong><span class="chip-role">IaC</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔄</span><div><strong>ArgoCD</strong><span class="chip-role">GitOps deploy</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">📊</span><div><strong>Grafana</strong><span class="chip-role">Metrics dashboards</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔭</span><div><strong>OpenTelemetry</strong><span class="chip-role">Distributed tracing</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">🔥</span><div><strong>Firebase (FCM)</strong><span class="chip-role">Push notifications</span></div></div>
+        <div class="tech-chip"><span class="chip-icon">☁️</span><div><strong>CloudFront</strong><span class="chip-role">CDN</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /.page -->
+
+<div class="footer">
+  Built for <strong>TalkTime</strong> — System Design v1.0 &nbsp;·&nbsp; All services containerised &nbsp;·&nbsp; Designed for 1M+ concurrent users
+</div>
+
+<script>
+// ── Accordion ──
+function toggleAccordion(btn) {
+  const content = btn.nextElementSibling;
+  const isOpen = content.classList.contains('open');
+  btn.classList.toggle('open', !isOpen);
+  content.classList.toggle('open', !isOpen);
+}
+
+// ── Active nav link on scroll ──
+const sections = document.querySelectorAll('.section');
+const navLinks = document.querySelectorAll('.nav-link');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const link = document.querySelector(`.nav-link[href="#${id}"]`);
+      if (link) {
+        link.classList.add('active');
+        link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  });
+}, { threshold: 0.25, rootMargin: '-60px 0px -40% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
