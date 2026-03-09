@@ -27,9 +27,9 @@
     </div>
 
     <h1>Welcome back</h1>
-    <p class="subtitle">Sign in to continue your conversations</p>
+    <p class="subtitle">Sign in to continue...</p>
 
-    <!-- Login form -->
+    <!-- 5. Login form -->
     <form onsubmit="handleLogin(event)">
       <div class="field">
         <label for="email">Email or Username</label>
@@ -38,7 +38,7 @@
 
       <div class="field">
         <label for="password">Password</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required />
+        <input type="password" id="password" placeholder="password" autocomplete="current-password" required />
         <span class="pw-toggle" onclick="togglePw('password', this)" title="Show / hide password">👁️</span>
       </div>
 
@@ -52,10 +52,10 @@
       <button class="btn-primary" type="submit" id="login-btn">Sign In</button>
     </form>
 
-    <!-- Divider -->
+    <!-- 6. Divider -->
     <div class="divider">or continue with</div>
 
-    <!-- Google OAuth (wire up your own OAuth flow) -->
+    <!-- 7. Google OAuth (wire up your own OAuth flow) -->
     <button class="btn-social" type="button">
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
         <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.2 33.9 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.2-2.7-.5-4z"/>
@@ -66,7 +66,7 @@
       Continue with Google
     </button>
 
-    <!-- Footer -->
+    <!-- 8. Footer -->
     <div class="auth-footer">
       New to TalkTime? <a href="register.html">Create an account →</a>
     </div>

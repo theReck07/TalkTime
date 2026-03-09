@@ -1,9 +1,8 @@
 /* ============================================
-   TalkTime — Auth Styles
-   Shared across login, register, forgot-password
+   TalkTime — Auth Styles -- login, register, forgot-password
    ============================================ */
 
-/* ---------- CSS Variables (Dark theme default) ---------- */
+/* ---------- All CSS Variables (Dark theme default) ---------- */
 :root {
   --bg:             #0a0a0f;
   --surface:        rgba(255, 255, 255, 0.04);

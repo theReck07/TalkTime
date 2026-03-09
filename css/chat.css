@@ -1,6 +1,5 @@
 /* ============================================
-   TalkTime — chat.css
-   Chat page styles (separate from auth.css)
+   TalkTime — chat.css - Chat page styles
    ============================================ */
 
 /* ---------- Variables ---------- */
@@ -52,9 +51,8 @@ html, body {
 .chat-page  { height: 100vh; }
 .chat-app   { display: flex; height: 100%; }
 
-/* ============================================
-   SIDEBAR
-   ============================================ */
+/* SIDEBAR */
+
 .sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
