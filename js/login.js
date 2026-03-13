@@ -40,7 +40,7 @@ function handleLogin(e) {
     // window.location.href = 'chat.html';
     btn.textContent = 'Sign In';
     btn.disabled = false;
-    showError('Demo mode: connect your backend to proceed.');
+    showError('Demo mode ON: connect your backend to proceed.');
   }, 1400);
 }
 
