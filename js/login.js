@@ -25,6 +25,7 @@ function handleLogin(e) {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
 
+
   if (!email || !password) {
     showError('Please fill in all fields.');
     return;
